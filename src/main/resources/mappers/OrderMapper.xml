@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jsj.shardingjdbcdemo.dao.OrderMapper">
+
+    <resultMap id="order" type="com.jsj.shardingjdbcdemo.entity.Order">
+        <!--
+        column:表里面指定的列
+        property：对应的javaBean属性
+        如果不指定就自动封装，但仍然建议写上全部映射规则
+        -->
+        <id column="order_id" property="orderId"/>
+        <result column="user_id" property="userId"/>
+        <result column="status" property="status"/>
+    </resultMap>
+
+    <select id="selectByUserId" resultMap="order">
+        select order_id,user_id,status from t_order WHERE user_id=#{userId}
+    </select>
+
+    <select id="selectByOrderId" resultMap="order">
+        select order_id,user_id,status from t_order WHERE order_id=#{orderId}
+    </select>
+
+    <select id="selectByOrderIdBetween" resultMap="order">
+        select order_id,user_id,status from t_order WHERE order_id between #{id1} and #{id2}
+    </select>
+
+    <insert id="insertOrder" >
+        insert into t_order (user_id,status) values (#{userId},#{status})
+    </insert>
+
+</mapper>
