@@ -3,6 +3,7 @@ package com.jsj.shardingjdbcdemo.config;
 import io.shardingsphere.core.api.ShardingDataSourceFactory;
 import io.shardingsphere.core.api.config.ShardingRuleConfiguration;
 import io.shardingsphere.core.api.config.TableRuleConfiguration;
+import io.shardingsphere.core.api.config.strategy.InlineShardingStrategyConfiguration;
 import io.shardingsphere.core.api.config.strategy.StandardShardingStrategyConfiguration;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -19,6 +20,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 配置分库分表规则和数据源整合
@@ -38,6 +40,7 @@ public class ShardingDataBaseConfig {
 
     /**
      * ShardingDataSource数据源,主数据源必须使用@Primary注解进行标识
+     *
      * @param dataSource0
      * @param dataSource1
      * @return
@@ -61,37 +64,46 @@ public class ShardingDataBaseConfig {
         Map<String, DataSource> dataSourceMap = new HashMap<>();
         dataSourceMap.put("ds_0", dataSource0);
         dataSourceMap.put("ds_1", dataSource1);
-//        Properties properties = new Properties();
-//        properties.setProperty("sql.show", Boolean.TRUE.toString());
-        return ShardingDataSourceFactory.createDataSource(dataSourceMap, shardingRuleConfig, new HashMap<>(),
+        // 获取数据源对象
+        return ShardingDataSourceFactory.createDataSource(dataSourceMap, shardingRuleConfig, new ConcurrentHashMap<>(),
                 new Properties());
+
     }
 
     /**
      * t_order逻辑表和数据节点配置
+     *
      * @return
      */
     private static TableRuleConfiguration getOrderTableRuleConfiguration() {
-        TableRuleConfiguration result = new TableRuleConfiguration();
-        result.setLogicTable("t_order");
-        result.setActualDataNodes("ds_${0..1}.t_order_${[0, 1]}");
-        result.setKeyGeneratorColumnName("order_id");
-        return result;
+        // 配置Order表规则
+        TableRuleConfiguration orderTableRuleConfig = new TableRuleConfiguration();
+        orderTableRuleConfig.setLogicTable("t_order");
+        orderTableRuleConfig.setActualDataNodes("ds_${0..1}.t_order_${0..1}");
+        orderTableRuleConfig.setKeyGeneratorColumnName("order_id");
+//        // 配置分库 + 分表策略
+//        orderTableRuleConfig.setDatabaseShardingStrategyConfig(
+//                new InlineShardingStrategyConfiguration("user_id", "ds_${user_id % 2}"));
+//        orderTableRuleConfig.setTableShardingStrategyConfig(
+//                new InlineShardingStrategyConfiguration("order_id", "t_order_${order_id % 2}"));
+        return orderTableRuleConfig;
     }
 
     /**
      * t_order_item逻辑表和数据节点配置
+     *
      * @return
      */
     private static TableRuleConfiguration getOrderItemTableRuleConfiguration() {
         TableRuleConfiguration result = new TableRuleConfiguration();
         result.setLogicTable("t_order_item");
-        result.setActualDataNodes("ds_${0..1}.t_order_item_${[0, 1]}");
+        result.setActualDataNodes("ds_${0..1}.t_order_item_${0..1}");
         return result;
     }
 
     /**
      * 创建该数据源的事务管理
+     *
      * @param dataSource
      * @return
      * @throws SQLException
@@ -105,6 +117,7 @@ public class ShardingDataBaseConfig {
 
     /**
      * 创建Mybatis的连接会话工厂实例
+     *
      * @param primaryDataSource
      * @return
      * @throws Exception
